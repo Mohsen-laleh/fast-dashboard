@@ -98,7 +98,7 @@ body <- dashboardBody(
       em(
         span("Created by", a(href = "http://deanattali.com", "Dean Attali")),
         HTML("&bull;"),
-        span("Code", a(href = "https://github.com/daattali/shiny-server/tree/master/bcl", "on GitHub"))
+        span("Code", a(href = "https://github.com/Mohsen-laleh/fast-dashboard/tree/app", "on GitHub"))
       ),
       downloadButton("download", "Download results")
     ),
