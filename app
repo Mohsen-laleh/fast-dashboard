@@ -31,16 +31,47 @@ a <- s[variable %in% c("Enroute1", "Enroute2"),]
 b <- s[variable %in% c("Full_Dis", "With_Dis", "Without_Dis"),]
 
 ############
-header <- dashboardHeader(titleWidth = 300, title = "FAST Dashboard")
+header <- dashboardHeader(
+            titleWidth = 300,
+            title = "FAST Dashboard"
+          )
 
-sidebar <- dashboardSidebar(width = 300,
+sidebar <- dashboardSidebar(
+  width = 300,
   sidebarMenu(
-    menuItem("Widgets", tabName = "widgets", icon = icon("eyedropper"), badgeLabel = "new", badgeColor = "green"),
-    menuItem("Inputs", icon = icon("bar-chart-o"),
-      sliderInput(inputId = "period", label = "Period: ", min = min(s$yy_mm), max = max(s$yy_mm), value = c(as.Date("2013-01-01"), as.Date("2015-01-01")), timeFormat = "%b-%y"),
-      selectInput("product", label="Choose Product:", unique(data$Art), width = '95%')
+    menuItem(
+      "Widgets",
+      tabName = "widgets",
+      icon = icon("eyedropper"),
+      badgeLabel = "new",
+      badgeColor = "green"
     ),
-    menuItem("Info", tabName = "info", icon = icon("info-circle"))
+     
+    menuItem(
+      "Inputs",
+      icon = icon("bar-chart-o"),
+      sliderInput(
+        inputId = "period",
+        label = "Period: ",
+        min = min(s$yy_mm),
+        max = max(s$yy_mm),
+        value = c(as.Date("2013-01-01"), as.Date("2015-01-01")),
+        timeFormat = "%b-%y"
+      ),
+       
+      selectInput(
+        inputId = "product",
+        label = "Choose Product:",
+        unique(data$Art),
+        width = '95%'
+      )
+    ),
+      
+    menuItem(
+      "Info",
+      tabName = "info",
+      icon = icon("info-circle")
+    )
   )
 )  
 
@@ -48,7 +79,7 @@ body <- dashboardBody(
   tabItems(
     tabItem(
       tabName = "info",
-      h2("FAST Dashboard: "),
+      h2("FAST Dashboard for team analysis"),
       tags$div(class="header", checked=NA,
         list(
           tags$p("Ready to take the Shiny tutorial? If so"),
@@ -64,28 +95,8 @@ body <- dashboardBody(
       br(),
       span("Learn how to build this app", a(href = "http://deanattali.com/blog/building-shiny-apps-tutorial/", "with my Shiny tutorial")),
       br(), br(),
-      span("This HTML based app is programmed by RStudio and we have include some packages as listed below: "),
-      br(),
-      tags$ul(
-        tags$li("shiny"), 
-        tags$li("shinydashbord"), 
-        tags$li("shinyjs (which lets you perform common useful JavaScript operations in Shiny apps)"),
-        tags$li("shinyWidgets"),
-        tags$li("shinyjqui"),
-        tags$li("rintrojs"),
-        tags$li("readxl"),
-        tags$li("data.table"),
-        tags$li("tidyverse (ggplot2, dplyr, lubridate , ...)"),
-        tags$li("ggthemes"),
-        tags$li("plotly"),
-        tags$li("scales"),
-        tags$li("rAmCharts"),
-        tags$li("highcharter"),
-        tags$li("htmlwidgets (Bring the best of JavaScript data visualization to R)")
-      ),
- 
       em(
-        span("Created by", a(href = "http://deanattali.com", "Planning department")),
+        span("Created by", a(href = "http://deanattali.com", "Dean Attali")),
         HTML("&bull;"),
         span("Code", a(href = "https://github.com/daattali/shiny-server/tree/master/bcl", "on GitHub"))
       ),
@@ -97,16 +108,28 @@ body <- dashboardBody(
       fluidRow(
         jqui_draggabled(
           box(
-            title = strong("waterfallPlot"), status = "primary", solidHeader = TRUE,
-            collapsible = TRUE, width = 12, 
-            plotOutput(outputId = "waterfallPlot", height = "750px")
+            title = strong("waterfallPlot"),
+            status = "primary",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            width = 12, 
+            plotOutput(
+              outputId = "waterfallPlot",
+              height = "750px"
+            )
           )  
         ),
+
         jqui_draggabled(
           box(
-            title = strong("bar"), status = "primary", solidHeader = TRUE,
-            collapsible = TRUE, width = 6, 
-            plotOutput(outputId = "bar", height = "600px")
+            title = strong("bar"),
+            status = "primary",
+            solidHeader = TRUE,
+            collapsible = TRUE,
+            width = 6, 
+            plotOutput(outputId = "bar",
+                       height = "600px"
+            )
           )
         )
       )
@@ -115,47 +138,142 @@ body <- dashboardBody(
 )
 
 server <- function(input, output) {
-
+    
   output$waterfallPlot <- renderPlot({
     ggplot(s, aes(fill = variable))+
-    scale_fill_manual(values = c("seagreen3", "seagreen4", "#FF40C9", "#F4FF1F", "deepskyblue2"), guide = guide_legend(title = NULL, direction = "horizontal")) +
-    geom_rect(aes(x = yy_mm, xmin = yy_mm - 8, xmax = yy_mm - 0.5, ymin = start, ymax = end), data = a[Art == input$product]) +
-    geom_rect(aes(x = yy_mm, xmin = yy_mm + 0.5, xmax = yy_mm + 8, ymin = start, ymax = end), data = b[Art == input$product]) +
-    xlim(input$period) +
-    labs(
-      title = paste("Waterfall plot for product: ", input$product),
-      subtitle = paste("Period between: ", input$period[1] , "and", input$period[2]),
-      x = "Date", y = "Value", caption = "(Designed by planning department)"
-     )+
-    geom_text(data = a[Art == input$product & variable == "Enroute1" & value > 0], aes(x = yy_mm - 4, y = pmin(start, end), label = round(OS_Coverage, 1)), size = 2.8, angle = 90, hjust = 1.2) +
-    geom_text(data = b[Art == input$product & variable == "Without_Dis" & value > 0], aes(x = yy_mm + 4, y = pmin(start,end), label = round(DIH, 1)), size = 2.8, angle = 90, hjust = 1.2) +
-    scale_x_date(date_breaks = "1 month", date_labels = "%b-%y", limits = input$period , expand = c(0.01,0)) +
-    theme(
-      plot.title = element_text(size = 15, face = "bold", family = "Comic Sans MS", color = "white", hjust = 0.5),
-      plot.subtitle = element_text(size = 10, family = "Comic Sans MS", face = "bold", hjust = 0.5),
-      plot.caption = element_text(size = 9),
-      plot.background = element_rect(colour = "black", fill = "#B0CCEB"),
-      axis.title.x = element_text(size = 10, face = "bold"),
-      axis.title.y = element_text(size = 10, face = "bold"),
-      axis.text.x = element_text(size = 9, angle = 90), 
-      axis.text.y = element_text(size = 9),
-      panel.background = element_rect(fill = '#D1EAFF', colour = 'blue'),
-      legend.title = element_text(colour = "black", size = 10, face = "bold"),
-      legend.text = element_text(colour = "black", size = 10),
-      legend.background = element_rect(fill = "#D1F7FF", size = 0.1, linetype = "dotted"),
-      legend.key = element_rect(fill = "grey", colour = "white", size = 1),
-      legend.key.width = unit(0.4, "cm"),
-      legend.key.height = unit(0.4, "cm"),
-      legend.position = c(.4, .99),
-      legend.justification = c("left", "top"),
-      legend.box.just = "right",
-      legend.margin = margin(6, 6, 6, 6)
-     )
-  })
+      scale_fill_manual(
+        values = c("seagreen3", "seagreen4", "#FF40C9", "#F4FF1F", "deepskyblue2"),
+        guide = guide_legend(
+          title = NULL,
+          direction = "horizontal"
+        ) 
+      ) +
+      geom_rect(
+        aes(x = yy_mm,
+            xmin = yy_mm - 8,
+            xmax = yy_mm - 0.5, 
+            ymin = start,
+            ymax = end
+           ),
+        data = a[Art == input$product]
+      ) +
+      geom_rect(
+        aes(x = yy_mm,
+            xmin = yy_mm + 0.5,
+            xmax = yy_mm + 8,
+            ymin = start,
+            ymax = end
+        ),
+        data = b[Art == input$product]
+      ) +
+      xlim(input$period) +
+      labs(
+        title = paste("Waterfall plot for product: ", input$product),
+        subtitle = paste("Period between: ", input$period[1] , "and", input$period[2]),
+        x = "Date",
+        y = "Value",
+        caption = "(Designed by planning department)"
+      ) +
+      geom_text(
+        data = a[Art == input$product & variable == "Enroute1" & value > 0],
+        aes(
+          x = yy_mm - 4,
+          y = pmin(start, end),
+          label = round(OS_Coverage, 1)
+        ),
+        size = 2.8,
+        angle = 90,
+        hjust = 1.2
+      ) +
+      geom_text(
+        data = b[Art == input$product & variable == "Without_Dis" & value > 0],
+        aes(
+          x = yy_mm + 4,
+          y = pmin(start, end),
+          label = round(DIH, 1)
+        ),
+        size = 2.8,
+        angle = 90,
+        hjust = 1.2
+      ) +
+      scale_x_date(
+        date_breaks = "1 month",
+        date_labels = "%b-%y",
+        limits = input$period,
+        expand = c(0.01, 0)
+      ) +
+      theme(
+        plot.title = element_text(
+          size = 15,
+          face = "bold",
+          family = "Comic Sans MS",
+          color = "white",
+          hjust = 0.5
+        ),
+        plot.subtitle = element_text(
+          size = 10,
+          family = "Comic Sans MS",
+          face = "bold",
+          hjust = 0.5
+        ),
+        plot.caption = element_text(size = 9),
+        plot.background = element_rect(
+          colour = "black",
+          fill = "#B0CCEB"
+        ),
+        axis.title.x = element_text(
+          size = 10,
+          face = "bold"
+        ),
+        axis.title.y = element_text(
+          size = 10,
+          face = "bold"
+        ),
+        axis.text.x = element_text(
+          size = 9,
+          angle = 90
+        ), 
+        axis.text.y = element_text(size = 9),
+        panel.background = element_rect(
+          fill = '#D1EAFF',
+          colour = 'blue'
+        ),
+        legend.title = element_text(
+          colour = "black",
+          size = 10,
+          face = "bold"
+        ),
+        legend.text = element_text(
+          colour = "black",
+          size = 10
+        ), 
+        legend.background = element_rect(
+          fill = "#D1F7FF",
+          size = 0.1,
+          linetype = "dotted"
+        ),
+        legend.key = element_rect(
+          fill = "grey",
+          colour = "white",
+          size = 1
+        ),
+        legend.key.width = unit(0.4, "cm"),
+        legend.key.height = unit(0.4, "cm"),
+        legend.position = c(.4, .99),
+        legend.justification = c("left", "top"),
+        legend.box.just = "right",
+        legend.margin = margin(6, 6, 6, 6)
+       )
+    })
 
   output$bar <- renderPlot({
     ggplot(s,aes(fill = variable)) + 
-      geom_line(aes(x = yy_mm, y = start))+xlim(input$period)
+      geom_line(
+        aes(x = yy_mm,
+            y = start
+        )
+      ) +
+      xlim(input$period)
   })
 }
 
